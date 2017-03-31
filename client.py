@@ -26,6 +26,3 @@ if __name__ == "__main__" :
     while s != 'EOF' :
         recv_file.write(s)
         s, addr = csock.recvfrom(BUFSIZE)
-
-    #s, addr = csock.recvfrom(BUFSIZE)
-    #print s.decode('utf-8')
