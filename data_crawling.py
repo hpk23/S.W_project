@@ -27,8 +27,8 @@ def search_url(artist, title):
         if ret is None :
             ret = re.findall(r'^/watch\?v=.+', atag["href"])
 
-        for fillter in video_filters :
-            if atag.get('title').find(fillter) != -1 :
+        for filter in video_filters :
+            if atag.get('title').find(filter) != -1 :
                 ret = re.findall(r'^/watch\?v=.+', atag["href"])
                 print "https://www.youtube.com" + ret[0]
                 return "https://www.youtube.com" + ret[0]
