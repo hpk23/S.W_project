@@ -10,9 +10,6 @@ if __name__ == "__main__" :
     BUFSIZE = 1024 * 10
 
     file_name = '릴렉스-힘내.mp3'.decode('utf-8')
-    #file = open('D:/2017_S.W/' + file_name.decode('utf-8'), 'rb')
-
-
 
     user_input = 'Y'
     file_size = os.path.getsize('D:/2017_S.W/' + file_name)

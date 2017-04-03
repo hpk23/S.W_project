@@ -14,6 +14,13 @@ def collection_reset(db, collection) :
     collection = db.music_list
     collection.create_index([("music", pymongo.ASCENDING)], unique=True)
 
+def collection_insert(collection, rank, artist, title) :
+    insert_item = {"rank" : rank, "artist" : artist, "title" : title, "music" : artist.strip() + '-' + title.strip()}
+    collection.insert(insert_item)
+
+def collection_remove(collection, artist, title) :
+    music = artist.strip() + '-' + title.strip()
+    collection.remove({"music" : music})
 
 def search_url(artist, title):
     search_word = artist.encode('utf-8') + '-' + title.encode('utf-8')
@@ -94,8 +101,8 @@ if __name__ == "__main__" :
                 artist = atags[3].text
 
                 try :
-                    insert_item = {"rank" : rank, "title" : music_name, "artist" : artist, "music" : artist.strip() + '-' + music_name.strip()}
-                    #collection.insert(insert_item)
+                    #collection_remove(collection, artist, music_name)
+                    collection_insert(collection, rank, artist, music_name)
                 except :
                     print rank, ' : ', music_name, '-', artist
                     continue
