@@ -4,8 +4,16 @@ from pymongo import MongoClient
 import youtube_dl
 import urllib
 import re
+import pymongo
 import glob
 import shutil
+
+def collection_reset(db, collection) :
+    collection.drop()
+    db.create_collection("music_list")
+    collection = db.music_list
+    collection.create_index([("music", pymongo.ASCENDING)], unique=True)
+
 
 def search_url(artist, title):
     search_word = artist.encode('utf-8') + '-' + title.encode('utf-8')
@@ -59,12 +67,12 @@ if __name__ == "__main__" :
 
     video_filters = ['Official Audio', '[MV]', 'M/V', '[Audio]', u'듣기', 'Full ver', 'Music Video', '[MP3 Audio]']
 
-    """MONGO_ADDR = '127.0.0.1'
+    MONGO_ADDR = '127.0.0.1'
     connection = MongoClient(MONGO_ADDR)
     db = connection.music_db
     collection = db.music_list
-    #doc = {'name' : 'test', 'artist' : 'test_artist', 'music' : 'test_music'}
-    collection.insert({'test' : 'test'})"""
+
+    collection_reset(db, collection) ####### collection reset
 
     urls = ['http://www.genie.co.kr/chart/top100?ditc=D&ymd=20170331&hh=15&rtm=Y&pg=1',
            'http://www.genie.co.kr/chart/top100?ditc=D&ymd=20170331&hh=15&rtm=Y&pg=2']
@@ -84,7 +92,12 @@ if __name__ == "__main__" :
                 atags = music_info[1].find_all('a')
                 music_name = atags[2].text
                 artist = atags[3].text
-                print rank, ' : ', music_name, '-', artist
-                search_url(artist, music_name)
 
+                try :
+                    insert_item = {"rank" : rank, "title" : music_name, "artist" : artist, "music" : artist.strip() + '-' + music_name.strip()}
+                    #collection.insert(insert_item)
+                except :
+                    print rank, ' : ', music_name, '-', artist
+                    continue
 
+                download_url = search_url(artist, music_name)
