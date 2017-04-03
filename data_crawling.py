@@ -1,4 +1,5 @@
 #coding: utf-8
+from __future__ import unicode_literals
 from bs4 import BeautifulSoup
 from pymongo import MongoClient
 import youtube_dl
@@ -13,9 +14,10 @@ def collection_reset(db, collection) :
     db.create_collection("music_list")
     collection = db.music_list
     collection.create_index([("music", pymongo.ASCENDING)], unique=True)
+    return db, collection
 
-def collection_insert(collection, rank, artist, title) :
-    insert_item = {"rank" : rank, "artist" : artist, "title" : title, "music" : artist.strip() + '-' + title.strip()}
+def collection_insert(collection, artist, title) :
+    insert_item = {"artist" : artist, "title" : title, "music" : artist.strip() + '-' + title.strip()}
     collection.insert(insert_item)
 
 def collection_remove(collection, artist, title) :
@@ -23,14 +25,15 @@ def collection_remove(collection, artist, title) :
     collection.remove({"music" : music})
 
 def search_url(artist, title):
-    search_word = artist.encode('utf-8') + '-' + title.encode('utf-8')
+    search_word = artist + '-' + title
+    #search_word = artist.encode('utf-8') + '-' + title.encode('utf-8')
     query_url = "https://www.youtube.com/results?search_query={}".format(search_word)
     ret = None
 
     print query_url
 
     try:
-        html_text = urllib.urlopen(query_url).read()
+        html_text = urllib.urlopen(query_url.encode('utf-8')).read()
     except:
         print 'urlopen fail'
         return
@@ -51,9 +54,15 @@ def search_url(artist, title):
     print "https://www.youtube.com" + ret[0]
     return "https://www.youtube.com" + ret[0]
 
-def download_music(music_url, artist, title, rank) :
+def download_music(music_url, artist, title, collection) :
+
+    artist = re.sub('\s', '_', artist.strip())
+    title = re.sub('\s', '_', title.strip())
+    file_name = artist + '-' + title + '.mp3'
+    #file_name = artist + '-' + title + '.mp3'
     ydl_opts = {
         'format': 'bestaudio/best',
+        #'outtmpl' : 'd:/2017_S.W/S.W_project/1st/{}'.format(file_name),
 
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
@@ -67,19 +76,26 @@ def download_music(music_url, artist, title, rank) :
     try :
         with youtube_dl.YoutubeDL(ydl_opts) as ydl :
             ydl.download(urls)
-    except :
-        print 'download_error'
+
+        file_path = 'd:/2017_S.W/S.W_project/*.mp3'
+        for path in glob.glob(file_path) :
+            dst_path = 'd:/2017_S.W/S.W_project/1st/' + file_name
+            shutil.move(path, dst_path)
+        collection_insert(collection, artist, title)
+    except Exception, e :
+        print 'download_error or music exists'
+
 
 if __name__ == "__main__" :
+    video_filters = ['Official Audio', '[MV]', 'M/V', u'듣기', 'Full ver', 'Music Video', '[MP3 Audio]']
+    #video_filters = ['Official Audio', '[MV]', 'M/V', '[Audio]', u'듣기', 'Full ver', 'Music Video', '[MP3 Audio]']
 
-    video_filters = ['Official Audio', '[MV]', 'M/V', '[Audio]', u'듣기', 'Full ver', 'Music Video', '[MP3 Audio]']
-
-    MONGO_ADDR = '127.0.0.1'
+    MONGO_ADDR = '127.0.0.1:27017'
     connection = MongoClient(MONGO_ADDR)
     db = connection.music_db
     collection = db.music_list
 
-    collection_reset(db, collection) ####### collection reset
+    db, collection = collection_reset(db, collection)
 
     urls = ['http://www.genie.co.kr/chart/top100?ditc=D&ymd=20170331&hh=15&rtm=Y&pg=1',
            'http://www.genie.co.kr/chart/top100?ditc=D&ymd=20170331&hh=15&rtm=Y&pg=2']
@@ -101,10 +117,9 @@ if __name__ == "__main__" :
                 artist = atags[3].text
 
                 try :
-                    #collection_remove(collection, artist, music_name)
-                    collection_insert(collection, rank, artist, music_name)
-                except :
-                    print rank, ' : ', music_name, '-', artist
-                    continue
+                    download_url = search_url(artist, music_name)
+                    download_music(download_url, artist, music_name, collection)
 
-                download_url = search_url(artist, music_name)
+                except :
+                    print rank, '. ', artist, '-', music_name
+                    continue
