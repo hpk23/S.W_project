@@ -44,6 +44,7 @@ class Server_Thread(threading.Thread) :
         print CLIENT_NAME + ' 님이 접속 하였습니다.'
         user_input = 'Y'
         while user_input == 'Y':
+            return
 
 
 
