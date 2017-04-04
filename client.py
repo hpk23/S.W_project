@@ -21,8 +21,6 @@ if __name__ == "__main__" :
     print comment,
     MYNAME = raw_input() # raw_input에는 한글이 왜 적용 안되지..?
 
-    #csock.sendto(MYNAME, SERVER_ADDR)
-
     s, server_addr = csock.recvfrom(BUFSIZE) # server로 부터 접속 응답 받음
 
     file_line, server_addr = csock.recvfrom(BUFSIZE)
