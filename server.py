@@ -1,8 +1,10 @@
 #coding: utf-8
+from __future__ import unicode_literals
 from socket import *
 from data_crawling import crawling_process
 from pymongo import MongoClient
 import os
+import sys
 import time
 import threading
 import Queue
@@ -41,15 +43,23 @@ class Server_Thread(threading.Thread) :
         collection = db.music_list
 
         udpSock.sendto('3 TEAM SERVER', CLIENT_ADDR)
-        print CLIENT_NAME + ' 님이 접속 하였습니다.'
-        user_input = 'Y'
-        while user_input == 'Y':
-            return
+        print CLIENT_NAME + ' 접속'
+
+        for item in collection.find() :
+            list_str = '. ' + item['music']
+            udpSock.sendto(list_str, self.CLIENT_ADDR)
+        udpSock.sendto("LIST END", self.CLIENT_ADDR)
+
+        #file_name, addr = udpSock.recvfrom(BUFSIZE)
+        self.daemon()
 
 
 
 
 if __name__ == "__main__" :
+
+    reload(sys)
+    sys.setdefaultencoding('utf-8')
 
     HOST = ''
     PORT = 5001
@@ -67,6 +77,8 @@ if __name__ == "__main__" :
     while(1) :
         CLIENT_NAME, CLIENT_ADDR = udpSock.recvfrom(BUFSIZE)
         server_thread = Server_Thread(CLIENT_NAME, CLIENT_ADDR)
+        server_thread.start()
+        break
 
 
 
