@@ -1,109 +1,73 @@
 #coding: utf-8
-from __future__ import unicode_literals
 from socket import *
-from data_crawling import crawling_process
+
+#from data_crawling import crawling_process
 from pymongo import MongoClient
-import os
-import sys
-import time
-import threading
-import Queue
-
-class Crawler_Thread(threading.Thread) :
-    def __init__(self) :
-        threading.Thread.__init__(self)
-        self.__exit = False
-        self.folder_idx = 1
-
-    def run(self) :
-
-        while(self.__exit == False) :
-            current_time = time.localtime()
-            current_minute = current_time.tm_min
-            while (current_minute) % 60 == 5 :
-                crawling_process(reset = None)
-                self.folder_idx = (self.folder_idx + 1) % 2
-
-    def Exit(self) :
-        self.__exit = True
-
-
-class Server_Thread(threading.Thread) :
-    def __init__(self, NAME, ADDR) :
-        threading.Thread.__init__(self)
-        self.__exit = False
-        self.CLIENT_NAME = NAME
-        self.CLIENT_ADDR = ADDR
-
-    def run(self) :
-
-        MONGO_ADDR = '127.0.0.1:27017'
-        connection = MongoClient(MONGO_ADDR)
-        db = connection.music_db
-        collection = db.music_list
-
-        udpSock.sendto('3 TEAM SERVER', CLIENT_ADDR)
-        print CLIENT_NAME + ' 접속'
-
-        for item in collection.find() :
-            list_str = '. ' + item['music']
-            udpSock.sendto(list_str, self.CLIENT_ADDR)
-        udpSock.sendto("LIST END", self.CLIENT_ADDR)
-
-        #file_name, addr = udpSock.recvfrom(BUFSIZE)
-        self.daemon()
-
 
 
 
 if __name__ == "__main__" :
 
-    reload(sys)
-    sys.setdefaultencoding('utf-8')
+    #os.system("chcp 949")
+    #os.system('cls')
 
-    HOST = ''
+    lst = [0, 1]
+    print (lst[0:1])
+
+    HOST = ""
     PORT = 5001
     ADDR = (HOST, PORT)
-    BUFSIZE = 1024 * 10
+    BUFSIZE = 1024
 
     folder_list = ["1st", "2nd"]
-    thread = Crawler_Thread()
-    thread.start()
 
-    udpSock = socket(AF_INET, SOCK_DGRAM)
-    udpSock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-    udpSock.bind(ADDR)
+    #clients = []
 
-    while(1) :
-        CLIENT_NAME, CLIENT_ADDR = udpSock.recvfrom(BUFSIZE)
-        server_thread = Server_Thread(CLIENT_NAME, CLIENT_ADDR)
-        server_thread.start()
-        break
-
-
-
-"""
-
-    file_name = '*.mp3'
-
-    user_input = 'Y'
-    file_size = os.path.getsize('D:/2017_S.W/' + file_name)
-
-    while user_input == 'Y' or user_input == 'y' :
-
+    try :
         udpSock = socket(AF_INET, SOCK_DGRAM)
         udpSock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+        print ('Socket created')
+    except error as msg:
+        print ('Failed to create socket. Error Code : ', end = " "); print(str(msg[0], "utf-8"), end = " "); print("Message ", end = " "); print(str(msg[1], "utf-8"))
+        sys.exit()
+
+    try :
         udpSock.bind(ADDR)
-        CLIENT_NAME, CLIENT_ADDR = udpSock.recvfrom(BUFSIZE)
-        udpSock.sendto('3 TEAM SERVER', CLIENT_ADDR)
-        print 'send to ' + CLIENT_NAME
+        print('Bind complete')
+    except error as msg :
+        print('Bind failed. Error Code : ', end = " "); print(str(msg[0], "utf-8"), end = " "); print("Message ", end = " "); print(str(msg[1], "utf-8"))
+        sys.exit()
 
-        file = open('D:/2017_S.W/' + file_name, 'rb')
+    while(1) :
+        print ("Waiting...")
+        CLIENT_NAME, CLIENT_ADDR = udpSock.recvfrom(BUFSIZE)            #  ADDRESS를 받음
 
-        for line in file :
-            udpSock.sendto(line, CLIENT_ADDR)
-        udpSock.sendto('EOF', CLIENT_ADDR)
-        udpSock.sendto(str(file_size), CLIENT_ADDR)
-        user_input, user_addr = udpSock.recvfrom(BUFSIZE)
-        print user_input
-"""
+        MONGO_ADDR = "127.0.0.1:27017"
+        connection = MongoClient(MONGO_ADDR)
+        db = connection.music_db
+        collection = db.music_list
+
+        udpSock.sendto("3 TEAM SERVER".encode('utf-8'), CLIENT_ADDR)   # 클라이언트에게 응답 메시지 전송
+        print(CLIENT_NAME.decode('utf-8'), end=" "); print("님 접속")
+
+        for item in collection.find():
+            list_str = item['rank'] + '. ' + item['music']
+            udpSock.sendto(list_str.encode('utf-8'), CLIENT_ADDR)   # 클라이언트에게 음악 리스트 메시지 전송
+        udpSock.sendto("LIST END".encode('utf-8'), CLIENT_ADDR)     # 클라이언트는 LIST END를 받을때까지 recvfrom
+
+        number, ADDR = udpSock.recvfrom(BUFSIZE)                    # 클라이언트에게 해당하는 음악의 번호를 받음
+
+        number = number.decode('utf-8')
+
+        path = "D:/2017_S.W/S.W_project/1st/"
+        file_name = collection.find({"rank" : number})[0]["music"]
+
+        file_name = path + file_name + ".mp3"
+
+        file = open(file_name, "rb")
+        lines = file.readlines()
+
+        for line in lines :
+            for j in (0, BUFSIZE, BUFSIZE) :
+                udpSock.sendto(line[j:j+BUFSIZE], CLIENT_ADDR)    # 클라이언트에게 파일을 BUFSIZE 만큼씩 보냄
+        udpSock.sendto("EOF".encode('utf-8'), CLIENT_ADDR)        # 클라이언트는 EOF를 받을때까지 recvfrom
