@@ -11,15 +11,12 @@ if __name__ == "__main__" :
     #os.system("chcp 949")
     #os.system('cls')
 
-    lst = [0, 1]
-    print (lst[0:1])
-
     HOST = ""
     PORT = 5001
     ADDR = (HOST, PORT)
     BUFSIZE = 1024
 
-    folder_list = ["1st", "2nd"]
+    #folder_list = ["1st", "2nd"]
 
     #clients = []
 
