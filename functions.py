@@ -2,6 +2,7 @@ import time
 import hashlib
 import sys
 import os
+from socket import timeout
 
 def send_message(sock, message) :
 
@@ -9,14 +10,14 @@ def send_message(sock, message) :
         sock.send(message.encode('utf-8'))
     except :
         sock.send(message)
-    #time.sleep(0.001)
 
 def receive_message(sock, size) :
 
-    while True :
+    try :
         data = sock.recv(size)
-        if not data : continue
         return data
+    except  Exception as e :
+        print(e)
 
 
 def receive_file(sock, size) :

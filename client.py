@@ -37,11 +37,11 @@ if __name__ == "__main__" :
         csock.connect(SERVER_ADDR)
     except Exception as e :
         print (e)
-        sys.exit()
-    data = receive_message(csock, BUFSIZE)
+        sys.exit(1)
+    data = receive_message(csock, BUFSIZE) # 서버 응답 메시지
     print(data)
 
-    data = receive_message(csock, BUFSIZE)
+    data = receive_message(csock, BUFSIZE) # 음악 리스트
     print(data)
 
     print "번호 입력 : ",
@@ -50,32 +50,29 @@ if __name__ == "__main__" :
 
     print "전송 받는중..."
 
-    data = receive_message(csock, BUFSIZE)
     out_file = open("temp.mp3", "wb")
-    while data != "__END__" :
-        if data == "__END__" : print ("같다")
-        out_file.write(data)
+    while True :
         data = receive_message(csock, BUFSIZE)
+        send_message(csock, "okay")
+        if data == "__END__" : break
+        out_file.write(data)
+
     out_file.close()
 
-    time.sleep(1)
-
-    recv_file_size =receive_message(csock, BUFSIZE)
+    original_file_size =receive_message(csock, BUFSIZE)
     hash = receive_message(csock, BUFSIZE)
 
     hasher = hashlib.sha224()
     with open("temp.mp3", "rb") as f :
-        print("hasher")
         buf = f.read()
         hasher.update(buf)
 
-    file_size = os.path.getsize("temp.mp3")
+    recv_file_size = os.path.getsize("temp.mp3")
 
-    print str(recv_file_size),; print " :: ",; print str(file_size)
 
     if str(hasher.hexdigest()) == hash :
-        print "같다."
+        print "전송완료"
     else :
-        print str(hasher.hexdigest()),; print hash
+        print "파일의 해시값이 다릅니다."
+        print "원본 파일 크기 : " + str(original_file_size) + " bytes\t받은 파일 크기 : " + str(recv_file_size) + " bytes"
 
-    print "완료"

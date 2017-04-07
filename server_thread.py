@@ -17,7 +17,7 @@ class Server_thread(threading.Thread) :
         connection = MongoClient(MONGO_ADDR)
         self.db = connection.music_db
         self.collection = self.db.music_list
-        self.BUFSIZE = 4096
+        self.BUFSIZE = 1024 * 10
         self.client_info = str(self.ip) + ":" + str(self.port)
 
     def run(self) :
@@ -40,15 +40,17 @@ class Server_thread(threading.Thread) :
 
             print(self.client_info + " 에게 " + file_name.split('/')[-1].encode('utf-8') + " 파일을 전송합니다...")
 
-            file = open(file_name, "rb")
-            lines = file.readlines()
-
             hasher = hashlib.sha224()
-            for line in lines :
-                send_message(self.csock, line)
-                hasher.update(line)
+            with open(file_name, "rb") as f :
+                line = f.read()
+                for i in range(0, len(line), self.BUFSIZE) :
+                    buf = line[i:i+self.BUFSIZE]
+                    hasher.update(buf)
+                    send_message(self.csock, buf)
+                    reply = receive_message(self.csock, self.BUFSIZE)
             send_message(self.csock, "__END__")
-            time.sleep(1)
+
+            time.sleep(0.5)
             file_size = os.path.getsize(file_name)
             send_message(self.csock, str(file_size)) # 파일 크기
             send_message(self.csock, str(hasher.hexdigest())) # 해쉬값
