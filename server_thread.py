@@ -26,10 +26,13 @@ class Server_thread(threading.Thread) :
             self.csock.send("소개발 3조 서버입니다.")
 
             item_list = self.collection.find()
+            msg = ""
             for item in item_list :
-                message = item["rank"] + ". " + item["artist"] + " - " + item["title"] # 음악 리스트를 클라이언트에 전송
-                send_message(self.csock, message)
-            send_message(self.csock, "__END__")
+                message = item["rank"] + ". " + item["artist"] + " - " + item["title"] + "\n" # 음악 리스트를 클라이언트에 전송
+                msg += message
+                #send_message(self.csock, message)
+            send_message(self.csock, msg)
+            #send_message(self.csock, "__END__")
             number = receive_message(self.csock, self.BUFSIZE)
 
             path = "D:/2017_S.W/1st/"
@@ -52,6 +55,7 @@ class Server_thread(threading.Thread) :
             print(self.client_info + " 에게 " + file_name.split('/')[-1].encode('utf-8') + " 파일 전송 완료\n\n")
         except Exception as e :
             print self.client_info + " 와의 연결중 예기치 못한 에러가 발생했습니다." + self.client_info + " 와의 접속을 종료합니다...\n\n"
+            print(e)
             self.csock.close()
             sys.exit(1)
 

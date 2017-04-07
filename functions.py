@@ -9,13 +9,13 @@ def send_message(sock, message) :
         sock.send(message.encode('utf-8'))
     except :
         sock.send(message)
-    time.sleep(0.0001)
+    #time.sleep(0.001)
 
 def receive_message(sock, size) :
-    data = sock.recv(size)
-    try :
-        return data.decode('utf-8')
-    except :
+
+    while True :
+        data = sock.recv(size)
+        if not data : continue
         return data
 
 

@@ -23,7 +23,7 @@ if __name__ == "__main__" :
     HOST = ''
     PORT = 6001
     ADDR = (HOST, PORT)
-    BUFSIZE = 4096
+    BUFSIZE = 1024*10
 
 
     SERVER_HOST = '210.117.182.122'
@@ -40,10 +40,9 @@ if __name__ == "__main__" :
         sys.exit()
     data = receive_message(csock, BUFSIZE)
     print(data)
+
     data = receive_message(csock, BUFSIZE)
-    while data != "__END__" :
-        print(data)
-        data = receive_message(csock, BUFSIZE)
+    print(data)
 
     print "번호 입력 : ",
     number = raw_input()
@@ -51,16 +50,18 @@ if __name__ == "__main__" :
 
     print "전송 받는중..."
 
-    data = receive_file(csock, BUFSIZE)
+    data = receive_message(csock, BUFSIZE)
     out_file = open("temp.mp3", "wb")
     while data != "__END__" :
         if data == "__END__" : print ("같다")
         out_file.write(data)
-        data = receive_file(csock, BUFSIZE)
+        data = receive_message(csock, BUFSIZE)
     out_file.close()
 
-    recv_file_size = receive_file(csock, BUFSIZE)
-    hash = receive_file(csock, BUFSIZE)
+    time.sleep(1)
+
+    recv_file_size =receive_message(csock, BUFSIZE)
+    hash = receive_message(csock, BUFSIZE)
 
     hasher = hashlib.sha224()
     with open("temp.mp3", "rb") as f :
