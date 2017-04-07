@@ -4,8 +4,6 @@ from bs4 import BeautifulSoup
 from pymongo import MongoClient
 import youtube_dl
 import urllib
-from urllib import request
-from urllib.parse import quote
 import re
 import pymongo
 import glob
@@ -34,11 +32,11 @@ def search_url(artist, title):
 
     search_word = artist + '-' + title
 
-    query_url = "https://www.youtube.com/results?search_query={}".format(quote(search_word))
+    query_url = "https://www.youtube.com/results?search_query={}".format(search_word)
     ret = None
 
     try:
-        html_text = request.urlopen(query_url).read()
+        html_text = urllib.urlopen(query_url).read()
     except Exception as e :
         print (e)
         #print ('urlopen fail')
@@ -86,10 +84,10 @@ def download_music(music_url, rank, artist, title, collection) :
 
         file_path = 'd:/2017_S.W/S.W_project/*.mp3'
         for path in glob.glob(file_path) :
-            dst_path = 'd:/2017_S.W/S.W_project/1st/' + file_name
+            dst_path = 'd:/2017_S.W/1st/' + file_name
             shutil.move(path, dst_path)
         collection_insert(collection, rank, artist, title)
-        print(collection.count())
+
     except Exception as e:
         print ('download_error or music exist')
         print (e)
@@ -133,5 +131,3 @@ def crawling_process(reset=None) :
                     continue
 
     print ('Done')
-
-crawling_process(True)

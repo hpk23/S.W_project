@@ -1,47 +1,80 @@
 #coding: utf-8
 from socket import *
+from functions import *
 import os
 import re
-import io
+import codecs
+import time
+import sys
+
+def create_sock() :
+    try :
+        sock = socket(AF_INET, SOCK_STREAM)
+        sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+    except error as msg:
+        print '소켓 생성 실패. Error Code : ',; print str(msg[0]),; print "Message ",; print str(msg[1])
+        sys.exit()
+
+    return sock
+
 
 if __name__ == "__main__" :
-
-    os.system('chcp 949') # cmd창에서 한글이 보이지 않는 현상 해결
-    os.system('cls')
 
     HOST = ''
     PORT = 6001
     ADDR = (HOST, PORT)
-    BUFSIZE = 1024
+    BUFSIZE = 4096
 
 
     SERVER_HOST = '210.117.182.122'
     SERVER_PORT = 5001
     SERVER_ADDR = (SERVER_HOST, SERVER_PORT)
 
-    csock = socket(AF_INET, SOCK_DGRAM)
-    csock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-    csock.bind(ADDR)
+    csock = create_sock()
 
-    MYNAME = input("이름을 입력해주세요 : ").encode('utf-8')
+    try :
+        print "서버에 연결중입니다...\n\n"
+        csock.connect(SERVER_ADDR)
+    except Exception as e :
+        print (e)
+        sys.exit()
+    data = receive_message(csock, BUFSIZE)
+    print(data)
+    data = receive_message(csock, BUFSIZE)
+    while data != "__END__" :
+        print(data)
+        data = receive_message(csock, BUFSIZE)
 
-    csock.sendto(MYNAME, SERVER_ADDR)
-    reply, server_addr = csock.recvfrom(BUFSIZE) # server로 부터 접속 응답 받음
-    print (reply.decode('utf-8'))
+    print "번호 입력 : ",
+    number = raw_input()
+    send_message(csock, number)
 
-    s, server_addr = csock.recvfrom(BUFSIZE)
-    s = s.decode('utf-8')
-    while(s != "LIST END") :
-        print (s)
-        s, server_addr = csock.recvfrom(BUFSIZE)
-        s = s.decode('utf-8')
-    number = input("번호를 입력 해주세요 : ").encode('utf-8')
-    csock.sendto(number, SERVER_ADDR)
+    print "전송 받는중..."
 
-    s, addr = csock.recvfrom(BUFSIZE)
-    out_file = io.open("temp.mp3", "wb")
-    while repr(s).find("EOF") == -1 :
-        out_file.write(s)
-        s, addr = csock.recvfrom(BUFSIZE)
-    print (s)
+    data = receive_file(csock, BUFSIZE)
+    out_file = open("temp.mp3", "wb")
+    while data != "__END__" :
+        if data == "__END__" : print ("같다")
+        out_file.write(data)
+        data = receive_file(csock, BUFSIZE)
     out_file.close()
+
+    recv_file_size = receive_file(csock, BUFSIZE)
+    hash = receive_file(csock, BUFSIZE)
+
+    hasher = hashlib.sha224()
+    with open("temp.mp3", "rb") as f :
+        print("hasher")
+        buf = f.read()
+        hasher.update(buf)
+
+    file_size = os.path.getsize("temp.mp3")
+
+    print str(recv_file_size),; print " :: ",; print str(file_size)
+
+    if str(hasher.hexdigest()) == hash :
+        print "같다."
+    else :
+        print str(hasher.hexdigest()),; print hash
+
+    print "완료"
