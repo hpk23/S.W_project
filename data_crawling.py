@@ -5,6 +5,7 @@ from pymongo import MongoClient
 import youtube_dl
 import urllib
 import re
+import sys
 import pymongo
 import glob
 import shutil
@@ -38,9 +39,8 @@ def search_url(artist, title):
     try:
         html_text = urllib.urlopen(query_url).read()
     except Exception as e :
-        print (e)
-        #print ('urlopen fail')
-        return
+        print 'url open error : ',; print e
+        sys.exit(1)
     soup = BeautifulSoup(html_text, "lxml")
     atags = soup.findAll('a', href=True, title=True)
     for atag in atags :

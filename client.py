@@ -2,9 +2,7 @@
 from socket import *
 from functions import *
 import os
-import re
-import codecs
-import time
+import shutil
 import sys
 
 def create_sock() :
@@ -75,4 +73,15 @@ if __name__ == "__main__" :
     else :
         print "파일의 해시값이 다릅니다."
         print "원본 파일 크기 : " + str(original_file_size) + " bytes\t받은 파일 크기 : " + str(recv_file_size) + " bytes"
+        while(True) :
+            print "파일을 지우시겠습니까?(Y/N) : ",
+            user_input = raw_input()
+            if user_input.upper() != 'Y' and user_input.upper() != 'N' :
+                print "잘못 입력 하셨습니다.\n"
+                continue
+
+            elif user_input.upper() == 'Y' :
+                os.remove("temp.mp3")
+                print("파일 삭제 완료")
+            break
 
