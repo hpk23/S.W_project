@@ -21,7 +21,7 @@ def create_tcp_socket() :
         # 소켓에 ADDR변수의 주소를 할당해줌
         sock.bind(ADDR) 
     except error as msg :
-        print 'bind 실패 Error Code : ',; print str(msg[0]); print "Message "; print str(msg[1])
+        print 'bind 실패 Error Code : ',; print str(msg[0]),; print "Message ",; print str(msg[1])
         sys.exit()
 
     try :
@@ -37,12 +37,11 @@ def create_tcp_socket() :
 if __name__ == "__main__" :
 
     HOST = ""
-    PORT = 5001
+    PORT = 6001
     ADDR = (HOST, PORT)
     LISTEN_NUMBER = 15
 
     tcpSock = create_tcp_socket()
-    count = 0
     while (True) :
         try :
             print '연결 대기중...'

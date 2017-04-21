@@ -60,6 +60,8 @@ def search_url(artist, title):
 
 def download_music(music_url, rank, artist, title, collection) :
 
+    # re.sub(pattern, string) pattern : 1) \s - 모든 공백을 지움
+    
     rank = re.sub('\s', '', rank.strip())
     artist = re.sub('\s', '_', artist.strip())
     title = re.sub('\s', '_', title.strip())

@@ -70,8 +70,11 @@ if __name__ == "__main__" :
 
     if str(hasher.hexdigest()) == hash :
         print "전송완료"
+        print "원본 파일 크기 : " + str(original_file_size) + " bytes\t받은 파일 크기 : " + str(recv_file_size) + " bytes"
+        print "원본 파일 해시값 : " + str(hash) + " 받은 파일 해시값 : " + str(hasher.hexdigest())
     else :
         print "파일의 해시값이 다릅니다."
+        print "원본 파일 해시값 : " + str(hash) + " 받은 파일 해시값 : " + str(hasher.hexdigest())
         print "원본 파일 크기 : " + str(original_file_size) + " bytes\t받은 파일 크기 : " + str(recv_file_size) + " bytes"
         while(True) :
             print "파일을 지우시겠습니까?(Y/N) : ",
