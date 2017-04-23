@@ -1,59 +1,54 @@
 #coding: utf-8
-from socket import *
+from TCP_CLASS import TcpSocket
+from UDP_CLASS import UdpSocket
 from server_thread import *
-from pymongo import MongoClient
-#from data_crawling import crawling_process
-
-import signal
 import sys
-
-def create_tcp_socket() :
-    try :
-        # SOCK_STREAM 연결지향(TCP/IP), SOCK_DGRAM 비연결지향(UDP)
-        sock = socket(AF_INET, SOCK_STREAM) 
-        sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-        print('Socket이 생성되었습니다.')
-    except error as msg :
-        print '소켓 생성 실패. Error Code : ',; print str(msg[0]),; print "Message ",; print str(msg[1])
-        sys.exit()
-
-    try :
-        # 소켓에 ADDR변수의 주소를 할당해줌
-        sock.bind(ADDR) 
-    except error as msg :
-        print 'bind 실패 Error Code : ',; print str(msg[0]),; print "Message ",; print str(msg[1])
-        sys.exit()
-
-    try :
-        # socket을 통해 client의 접속 요청을 기다림 (LISTEN_NUMBER 만큼 받을 수 있음)
-        sock.listen(LISTEN_NUMBER) 
-
-    except error as msg :
-        print 'LISTEN 실패.'
-        sys.exit()
-
-    return sock
+import time
 
 if __name__ == "__main__" :
-
     HOST = ""
-    PORT = 6001
+    PORT = 5005
     ADDR = (HOST, PORT)
     LISTEN_NUMBER = 15
+    BUFSIZE = 1024
 
-    tcpSock = create_tcp_socket()
-    while (True) :
-        try :
-            print '연결 대기중...'
+    connection = UdpSocket(PORT, BUFSIZE=BUFSIZE)
 
-            # 접속 요청한 client와 server의 접속을 받아들임
-            (connection, (ip, port)) = tcpSock.accept() 
-            print "Connection ip : " + str(ip) + " Port : " + str(port)
+    protocol, addr = connection.receive_message()
 
-            # thread를 이용하여 client와 server를 통신 하도록 한 후 다시 accept로 돌아가 client의 연결을 기다림
-            thread = Server_thread(ip, port, connection) 
-            thread.start()
-        except Exception as e :
-            print(e)
 
-    tcpSock.close()
+    if protocol == '0' :
+        print "TCP Protocol\n"
+        #del connection
+        connection = TcpSocket(PORT, SERVER=True, LISTEN_NUMBER=LISTEN_NUMBER, BUFSIZE=BUFSIZE)
+        while True :
+            client_sock, addr = connection.sock.accept()
+            connection.setClient(client_sock, addr)
+            thread = ServerThread(connection)
+            thread.run()
+
+        sys.exit(0)
+
+    print "UDP Protocol\n"
+
+    # UDP SERVER
+    connection.send_message(addr, "3team server")
+    time.sleep(1)
+
+    msg = ""
+    count = 0
+    for item in connection.collection.find():
+        list_str = item['rank'] + '. ' + item['music'] + '\n'
+        msg += list_str
+        count += 1
+        if count == 10 : break
+    connection.send_message(addr, msg)  #음악리스트를 클라이언트에 전송
+
+    number, addr = connection.receive_message() # 클라이언트가 선택한 번호를 전송받음
+    number = int(number)
+
+    connection.sock.settimeout(3)
+
+    directory_path = "D:/2017_S.W/1st"
+    if number is 0 :
+        connection.send_directory(addr, directory_path)
