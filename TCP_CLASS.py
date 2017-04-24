@@ -3,6 +3,7 @@ import time
 import hashlib
 import sys
 import os
+import datetime
 from socket import *
 from pymongo import MongoClient
 
@@ -22,8 +23,8 @@ class TcpSocket :
         try :
             # SOCK_STREAM 연결지향(TCP/IP), SOCK_DGRAM 비연결지향(UDP)
             self.sock = socket(AF_INET, SOCK_STREAM)
-            self.sock.setsockopt(SOL_SOCKET, SO_SNDBUF, self.BUFSIZE)
-            #self.sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+            #self.sock.setsockopt(SOL_SOCKET, SO_SNDBUF, self.BUFSIZE)
+            self.sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
 
         except Exception as e :
             print '소켓 생성 실패 : ',; print e
@@ -41,12 +42,14 @@ class TcpSocket :
                 print 'LISTEN 실패 : ',; print e
                 sys.exit(1)
 
+            self.accept_sock = self.sock
+
     def setClient(self, client_sock, client_address):
         self.sock = client_sock
         self.client_ADDR = client_address
 
-    #def __del__(self) :
-    #    self.sock.close()
+    def __del__(self) :
+        self.sock.close()
 
     def send_message(self, message) :
         try :
@@ -68,15 +71,36 @@ class TcpSocket :
     def receive_directory(self) :
         length = self.receive_message()
         length = int(length)
+        strange_files = []
         for i in range(length) :
             file_name = self.receive_message() # 파일 이름 전송 받기
 
             directory = '/'.join(file_name.split('/')[:-1])
-            print 'file_name : ',; print file_name,; print ' --> ',; print directory
-            if not os.path.isdir(directory) :
-                os.mkdir(directory)
 
-            self.receive_file(file_name)
+            try :
+                if not os.path.isdir(directory) :
+                    os.mkdir(directory)
+            except :
+                pass
+
+            check, file_info = self.receive_file(file_name, True)
+            if check == False:
+                strange_files.append(file_info)
+
+        for file_name, original_hash_value, receive_hash_value, original_file_size, receive_file_size in strange_files :
+            print file_name,; print "\n\n파일의 해시값이 다릅니다."
+            print "원본 파일 크기 : " + str(original_file_size) + " bytes\t받은 파일 크기 : " + str(receive_file_size) + " bytes"
+            print "원본 파일 해시값 : " + str(original_hash_value) + " 받은 파일 해시값 : " + str(receive_hash_value)
+            while (True):
+                print "파일을 지우시겠습니까?(Y/N) : ",
+                user_input = raw_input()
+                if user_input.upper() != 'Y' and user_input.upper() != 'N':
+                    print "잘못 입력 하셨습니다.\n"
+                    continue
+                elif user_input.upper() == 'Y':
+                    os.remove(file_name)
+                    print("파일 삭제 완료")
+                break
 
 
     def send_directory(self, directory_path) :
@@ -98,16 +122,17 @@ class TcpSocket :
                 file_name = current_path + '/' + file
                 self.send_message(file_name) # file_name 전송
                 send_file_name = path + '/' + file
-                print send_file_name
-                try :
-                    send_file_name = send_file_name.decode('utf-8')
-                except :
-                    pass
+                #try :
+                #    send_file_name = send_file_name.decode('utf-8')
+                #except :
+                #    pass
                 self.send_file(send_file_name)
 
 
 
-    def receive_file(self, file_name) :
+    def receive_file(self, file_name, directory = None) :
+
+        start = datetime.datetime.now()
         with open(file_name, "wb") as out_file :
             length = self.receive_message()
             length = int(length)
@@ -116,6 +141,54 @@ class TcpSocket :
                 data = self.receive_message()
                 out_file.write(data)
         out_file.close()
+        end = datetime.datetime.now()
+
+        original_file_size = self.receive_message()
+        original_hash_value = self.receive_message()
+
+        hasher = hashlib.sha224()
+
+        receive_file_size = os.path.getsize(file_name)
+        with open(file_name, "rb") as receive_file :
+            buf = receive_file.read(self.BUFSIZE)
+            while buf :
+                hasher.update(buf)
+                buf = receive_file.read(self.BUFSIZE)
+
+        receive_hash_value = hasher.hexdigest()
+        if str(original_hash_value) == str(receive_hash_value) :
+            try :
+                print file_name.split('/')[-1].decode('cp949').encode('utf-8') + " 전송완료"
+            except :
+                print file_name.split('/')[-1].encode('utf-8') + " 전송완료"
+            self.send_message("receive complete")
+            print str(round(float(receive_file_size / (1024 * 1024)) / (end - start).seconds, 2)) + " bytes/sec"
+            return (True, file_name)
+
+        else :
+            try :
+                print file_name.split('/')[-1].decode('cp949').encode('utf-8') + " 전송완료"
+            except :
+                print file_name.split('/')[-1].encode('utf-8') + " 전송완료"
+            if directory is None :
+                print "파일의 해시값이 다릅니다."
+                print "원본 파일 해시값 : " + str(original_hash_value) + " 받은 파일 해시값 : " + str(receive_hash_value)
+                print "원본 파일 크기 : " + str(original_file_size) + " bytes\t받은 파일 크기 : " + str(receive_file_size) + " bytes"
+                while (True):
+                    print "파일을 지우시겠습니까?(Y/N) : ",
+                    user_input = raw_input()
+                    if user_input.upper() != 'Y' and user_input.upper() != 'N':
+                        print "잘못 입력 하셨습니다.\n"
+                        continue
+
+                    elif user_input.upper() == 'Y':
+                        os.remove(file_name)
+                        print("파일 삭제 완료")
+                self.send_message("receive complete")
+                print str(round(float(receive_file_size / (1024 * 1024)) / (end - start).seconds, 2)) + " bytes/sec"
+                return (False, [file_name, original_hash_value, receive_hash_value, original_file_size, receive_file_size])
+
+
 
     def send_file(self, file_name) :
 
@@ -124,13 +197,23 @@ class TcpSocket :
 
         total = int((file_size) / self.BUFSIZE + 0.5) + 1
         self.send_message(str(total))
-        count = 0
+        try :
+            print file_name.split('/')[-1].decode('cp949').encode('utf-8'),; print '을 전송합니다.'
+        except :
+            print file_name.split('/')[-1],; print '을 전송합니다.'
+
         with open(file_name, "rb") as f:
             buf = f.read(self.BUFSIZE)
             while buf :
-                count += 1
                 hasher.update(buf)
                 self.send_message(buf)
                 buf = f.read(self.BUFSIZE)
-        print count
-        print 'complete send file'
+
+        self.send_message(str(file_size))
+        self.send_message(str(hasher.hexdigest()))
+
+        try :
+            print file_name.split('/')[-1].decode('cp949').encode('utf-8'),; print '전송완료\n'
+        except :
+            print file_name.split('/')[-1],; print '전송완료\n'
+        self.receive_message() # file receive complete

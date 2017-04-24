@@ -35,3 +35,11 @@ class ServerThread(threading.Thread) : # threading.Thread 클래스를 상속 �
         directory_path = "D:/2017_S.W/1st"
         if number is 0:
             self.connection.send_directory(directory_path)
+
+        else:
+            number = str(number)
+            file_name = self.connection.collection.find({"rank": number})[0]["music"]
+            self.connection.send_message(file_name + ".mp3")
+            file_name = directory_path + '/' + file_name + ".mp3"
+            self.connection.send_file(file_name)
+        sys.exit(0)

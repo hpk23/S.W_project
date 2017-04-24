@@ -16,13 +16,12 @@ if __name__ == "__main__" :
 
     protocol, addr = connection.receive_message()
 
-
     if protocol == '0' :
         print "TCP Protocol\n"
         #del connection
         connection = TcpSocket(PORT, SERVER=True, LISTEN_NUMBER=LISTEN_NUMBER, BUFSIZE=BUFSIZE)
         while True :
-            client_sock, addr = connection.sock.accept()
+            client_sock, addr = connection.accept_sock.accept()
             connection.setClient(client_sock, addr)
             thread = ServerThread(connection)
             thread.run()
@@ -52,3 +51,10 @@ if __name__ == "__main__" :
     directory_path = "D:/2017_S.W/1st"
     if number is 0 :
         connection.send_directory(addr, directory_path)
+
+    else :
+        number = str(number)
+        file_name = connection.collection.find({"rank": number})[0]["music"]
+        connection.send_message(addr, file_name + ".mp3")
+        file_name = directory_path + '/' + file_name + ".mp3"
+        connection.send_file(addr, file_name)
