@@ -9,7 +9,7 @@ import datetime
 
 class UdpSocket:
 
-    def __init__(self, PORT, BUFSIZE=1024 * 10, HOST=''):
+    def __init__(self, PORT, BUFSIZE=1024 * 50, HOST='') :
         self.HOST = HOST
         self.PORT = PORT
         self.BUFSIZE = BUFSIZE
@@ -204,7 +204,11 @@ class UdpSocket:
         total = int((file_size) / self.BUFSIZE + 0.5) + 1
         self.send_message(addr, str(total))
 
-        print file_name.split('/')[-1].encode('utf-8'), ;print '을 전송합니다.'
+        try :
+            print file_name.split('/')[-1].decode('cp949').encode('utf-8'),; print '을 전송합니다.'
+        except :
+            print file_name.split('/')[-1],; print '을 전송합니다.'
+
         with open(file_name, "rb") as f:
             buf = f.read(self.BUFSIZE)
             while buf :
@@ -214,5 +218,10 @@ class UdpSocket:
 
         self.send_message(addr, str(file_size)) # file size 전송
         self.send_message(addr, str(hasher.hexdigest())) # file hash value 전송
+
+        try :
+            print file_name.split('/')[-1].decode('cp949').encode('utf-8'),; print '전송완료\n'
+        except :
+            print file_name.split('/')[-1],; print '전송완료\n'
 
 

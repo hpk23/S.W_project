@@ -10,7 +10,7 @@ from pymongo import MongoClient
 
 class TcpSocket :
 
-    def __init__(self, PORT, SERVER = None, LISTEN_NUMBER=15, BUFSIZE=1024 * 50, HOST=''):
+    def __init__(self, PORT, SERVER = None, LISTEN_NUMBER=15, BUFSIZE=1024 * 50, HOST='') :
         self.HOST = HOST
         self.PORT = PORT
         self.BUFSIZE = BUFSIZE
@@ -44,7 +44,7 @@ class TcpSocket :
 
             self.accept_sock = self.sock
 
-    def setClient(self, client_sock, client_address):
+    def setClient(self, client_sock, client_address) :
         self.sock = client_sock
         self.client_ADDR = client_address
 
@@ -122,10 +122,6 @@ class TcpSocket :
                 file_name = current_path + '/' + file
                 self.send_message(file_name) # file_name 전송
                 send_file_name = path + '/' + file
-                #try :
-                #    send_file_name = send_file_name.decode('utf-8')
-                #except :
-                #    pass
                 self.send_file(send_file_name)
 
 
@@ -162,7 +158,7 @@ class TcpSocket :
             except :
                 print file_name.split('/')[-1].encode('utf-8') + " 전송완료"
             self.send_message("receive complete")
-            print str(round(float(receive_file_size / (1024 * 1024)) / (end - start).seconds, 2)) + " bytes/sec"
+            print str(round(float(receive_file_size / (1024 * 1024)) / (end - start).seconds, 2)) + " Mb/sec"
             return (True, file_name)
 
         else :
@@ -185,7 +181,7 @@ class TcpSocket :
                         os.remove(file_name)
                         print("파일 삭제 완료")
                 self.send_message("receive complete")
-                print str(round(float(receive_file_size / (1024 * 1024)) / (end - start).seconds, 2)) + " bytes/sec"
+                print str(round(float(receive_file_size / (1024 * 1024)) / (end - start).seconds, 2)) + " Mb/sec"
                 return (False, [file_name, original_hash_value, receive_hash_value, original_file_size, receive_file_size])
 
 
@@ -195,7 +191,7 @@ class TcpSocket :
         hasher = hashlib.sha224()
         file_size = os.path.getsize(file_name)
 
-        total = int((file_size) / self.BUFSIZE + 0.5) + 1
+        total = int((file_size) / (self.BUFSIZE) + 0.5) + 1
         self.send_message(str(total))
         try :
             print file_name.split('/')[-1].decode('cp949').encode('utf-8'),; print '을 전송합니다.'

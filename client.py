@@ -13,7 +13,7 @@ if __name__ == "__main__" :
     HOST = ''
     PORT = 5006
     ADDR = (HOST, PORT)
-    BUFSIZE = 1024
+    BUFSIZE = 1024 * 30
 
     SERVER_HOST = '210.117.182.122'
     SERVER_PORT = 5005
@@ -31,13 +31,11 @@ if __name__ == "__main__" :
             break
 
     connection = UdpSocket(PORT, BUFSIZE=BUFSIZE)
-
     connection.send_message(SERVER_ADDR, str(protocol))  # 선택한 프로토콜을 서버에 전송
 
     if protocol is 0 :
-        #del connection
         connection = TcpSocket(PORT, BUFSIZE=BUFSIZE)
-        time.sleep(2)
+        time.sleep(1)
         connection.sock.connect(SERVER_ADDR)
 
         reply = connection.receive_message()  # 서버로부터 응답 메시지 받기
@@ -54,11 +52,12 @@ if __name__ == "__main__" :
 
         if number is 0:
             connection.receive_directory()
-
+        else :
+            file_name = connection.receive_message()
+            connection.receive_file(file_name)
         sys.exit(0)
 
     reply, addr = connection.receive_message() # 서버로부터 응답 메시지 받기
-
     print reply
     time.sleep(1)
 
@@ -73,3 +72,6 @@ if __name__ == "__main__" :
 
     if number is 0 :
         connection.receive_directory()
+    else :
+        file_name, addr = connection.receive_message()
+        connection.receive_file(file_name)

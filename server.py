@@ -10,7 +10,7 @@ if __name__ == "__main__" :
     PORT = 5005
     ADDR = (HOST, PORT)
     LISTEN_NUMBER = 15
-    BUFSIZE = 1024
+    BUFSIZE = 1024* 8
 
     connection = UdpSocket(PORT, BUFSIZE=BUFSIZE)
 
