@@ -13,7 +13,7 @@ if __name__ == "__main__" :
     HOST = ''
     PORT = 5006
     ADDR = (HOST, PORT)
-    BUFSIZE = 1024 * 30
+    BUFSIZE = 1024
 
     SERVER_HOST = '210.117.182.122'
     SERVER_PORT = 5005
@@ -38,23 +38,26 @@ if __name__ == "__main__" :
         time.sleep(1)
         connection.sock.connect(SERVER_ADDR)
 
-        reply = connection.receive_message()  # 서버로부터 응답 메시지 받기
+        reply = connection.receive_message()
         print reply
-
-        music_list = connection.receive_message()  # 서버로부터 음악리스트 전송 받기
-        print music_list
+        length = int(connection.receive_message())
+        for i in range(length) :
+            msg = connection.receive_message()
+            print msg
 
         print "전송받을 파일의 번호를 입력해주세요( 디렉토리로 전송받기 : 0) : ",
         number = input()
         connection.send_message(str(number))  # 선택한 번호를 서버에 전송
 
-        connection.sock.settimeout(3)
+        #connection.sock.settimeout(10)
 
         if number is 0:
             connection.receive_directory()
-        else :
+
+        else:
             file_name = connection.receive_message()
             connection.receive_file(file_name)
+
         sys.exit(0)
 
     reply, addr = connection.receive_message() # 서버로부터 응답 메시지 받기

@@ -11,26 +11,34 @@ class ServerThread(threading.Thread) : # threading.Thread 클래스를 상속 �
     # __init__ 함수는 C++ 클래스의 생성자와 같은 역할을 한다.
     # self 는 C++의 this 와 같은 역할
     def __init__(self, connection) :
-        threading.Thread.__init__(self)
+        super(ServerThread, self).__init__()
+        self._stop = threading.Event()
         self.connection = connection
 
+    def stop(self):
+        self._stop.set()
+
+    def stopped(self):
+        return self._stop.isSet()
+
+    def __del__(self) :
+        self.stop()
+        #self.join()
+
     def run(self) :
-        self.connection.send_message( "3team server")
-        time.sleep(1)
+        self.connection.send_message("3team server")
 
-        msg = ""
         count = 0
-        for item in self.connection.collection.find():
-            list_str = item['rank'] + '. ' + item['music'] + '\n'
-            msg += list_str
+        self.connection.send_message('10')
+        for item in self.connection.collection.find() :
+            list_str = item['rank'] + '. ' + item['music']
+            self.connection.send_message(list_str)
             count += 1
-            if count == 10: break
-        self.connection.send_message(msg)  # 음악리스트를 클라이언트에 전송
+            if count == 10 : break ## 나중에 삭제
 
-        number = self.connection.receive_message()  # 클라이언트가 선택한 번호를 전송받음
-        number = int(number)
+        number = int(self.connection.receive_message())
 
-        self.connection.sock.settimeout(3)
+        self.connection.sock.settimeout(10)
 
         directory_path = "D:/2017_S.W/1st"
         if number is 0:
@@ -42,4 +50,3 @@ class ServerThread(threading.Thread) : # threading.Thread 클래스를 상속 �
             self.connection.send_message(file_name + ".mp3")
             file_name = directory_path + '/' + file_name + ".mp3"
             self.connection.send_file(file_name)
-        sys.exit(0)
