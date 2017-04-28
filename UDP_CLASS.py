@@ -34,39 +34,29 @@ class UdpSocket:
             print 'bind 실패 : ', ; print e
             sys.exit()
 
-
-
-
     def __del__(self) :
         self.sock.close()
 
 
     def receive_message(self) :
-
-        try :
+        while True :
             data, addr = self.sock.recvfrom(self.BUFSIZE)
+            if not data : return ''
             try :
                 data = data.decode('utf-8')
             except :
                 pass
             self.sock.sendto("receive data", addr)
             return data, addr
-        except Exception as e :
-            return ('', '')
-
-
 
     def send_message(self, addr, message) :
-
         try :
-            try :
-                message = message.encode('utf-8')
-            except :
-                pass
+            self.sock.sendto(message.encode('utf-8'), addr)
+        except :
             self.sock.sendto(message, addr)
-            reply, addr = self.sock.recvfrom(self.BUFSIZE)
-        except Exception as e :
-            pass
+        data, addr = self.sock.recvfrom(self.BUFSIZE)
+        while data != "receive data" :
+            data, addr = self.sock.recvfrom(self.BUFSIZE)
 
 
     def receive_directory(self) :
@@ -122,7 +112,6 @@ class UdpSocket:
                 file_name = current_path + '/' + file
                 self.send_message(addr, file_name) # file_name 전송
                 send_file_name = path + '/' + file
-                #print send_file_name.decode('cp949').encode('utf-8'),; print '을 전송합니다.'
                 try :
                     send_file_name = send_file_name.decode('utf-8')
                 except :
@@ -168,7 +157,7 @@ class UdpSocket:
 
             #print "원본 파일 크기 : " + str(original_file_size) + " bytes\t받은 파일 크기 : " + str(receive_file_size) + " bytes"
             #print "원본 파일 해시값 : " + str(original_hash_value) + " 받은 파일 해시값 : " + str(receive_hash_value)
-            print str(round(float(receive_file_size / (1024 * 1024)) / (end - start).seconds, 2)) + " Mb/sec"
+            print str(round(float(receive_file_size / (1024 * 1024) + 1.0) / ((end - start).seconds + 1.0), 2)) + " Mb/sec"
             return (True, file_name)
         else:
             try :
@@ -191,7 +180,7 @@ class UdpSocket:
                     elif user_input.upper() == 'Y':
                         os.remove(file_name)
                         print("파일 삭제 완료")
-            print str(round(float(receive_file_size / (1024 * 1024)) / (end - start).seconds, 2)) + " Mb/sec"
+            print str(round(float(receive_file_size / (1024 * 1024) + 1.0) / ((end - start).seconds + 1.0), 2)) + " Mb/sec"
             return (False, [file_name, original_hash_value, receive_hash_value, original_file_size, receive_file_size])
 
 
