@@ -21,17 +21,17 @@ class UdpSocket:
 
         try:
             self.sock = socket(AF_INET, SOCK_DGRAM)
-            self.sock.setsockopt(SOL_SOCKET, SO_SNDBUF, self.BUFSIZE)
-            #self.sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+            #self.sock.setsockopt(SOL_SOCKET, SO_SNDBUF, self.BUFSIZE)
+            self.sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
 
         except Exception as e:
-            print '소켓 생성 실패 : ', ; print e
+            print '소켓 생성 실패 : ',; print e
             sys.exit()
 
         try:
             self.sock.bind(self.ADDR)
         except Exception as e:
-            print 'bind 실패 : ', ; print e
+            print 'bind 실패 : ',; print e
             sys.exit()
 
     def __del__(self) :
@@ -41,7 +41,7 @@ class UdpSocket:
     def receive_message(self) :
         while True :
             data, addr = self.sock.recvfrom(self.BUFSIZE)
-            if not data : return ''
+            if not data : return None, None
             try :
                 data = data.decode('utf-8')
             except :

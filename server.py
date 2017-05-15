@@ -51,7 +51,7 @@ if __name__ == "__main__" :
                 connection = TcpSocket(PORT, SERVER=True, LISTEN_NUMBER=LISTEN_NUMBER, BUFSIZE=BUFSIZE)
                 client_sock, addr = connection.accept_sock.accept()
                 connection.setClient(client_sock, addr)
-                thread = ServerThread(connection)
+                thread = ServerThread(connection, file_name, file_size, number)
                 thread.run()
                 del thread
                 continue
