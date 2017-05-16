@@ -38,12 +38,12 @@ if __name__ == "__main__" :
         else:
             number = str(number)
             file_name = connection.collection.find({"rank": number})[0]["music"]
-            connection.send_message(addr, file_name + ".mp3")
+            #connection.send_message(addr, file_name + ".mp3")
 
             file_name = directory_path + '/' + file_name + ".mp3"
 
             file_size = os.path.getsize(file_name)
-            connection.send_message(str(file_size))
+            connection.send_message(addr, str(file_size))
 
             if file_size > 1024 * 60 :
 
@@ -51,6 +51,8 @@ if __name__ == "__main__" :
                 connection = TcpSocket(PORT, SERVER=True, LISTEN_NUMBER=LISTEN_NUMBER, BUFSIZE=BUFSIZE)
                 client_sock, addr = connection.accept_sock.accept()
                 connection.setClient(client_sock, addr)
+                connection.send_message(file_name)
+
                 thread = ServerThread(connection, file_name, file_size, number)
                 thread.run()
                 del thread

@@ -77,12 +77,16 @@ class TcpSocket :
 
         reply = self.receive_message() # 파일 존재 여부에 대한 메시지 받기 ( None : 없음, Exist : 존재 )
         file = open(file_name, "rb")
+
+        print "reply",; print reply
         if reply == "Exist" :
 
             jump_size = self.receive_message() # 클라이언트에 존재하던 파일의 크기를 받음
+            jump_size = int(jump_size)
             my_hash_value = self.get_hash_value(file_name, jump_size)
             self.send_message(str(my_hash_value)) # 무결성 체크를 위해 클라이언트에게 해쉬값 전송
-            file.read(jump_size) # jump_size 만큼 파일 포인터 점프
+            buf = file.read(jump_size) # jump_size 만큼 파일 포인터 점프
+            hasher.upadte(buf)
 
             file_size = os.path.getsize(file_name)
             length = int(((file_size - jump_size)) / (self.BUFSIZE) + 0.5) + 1
@@ -93,18 +97,17 @@ class TcpSocket :
             file_size = os.path.getsize(file_name)
             length = int((file_size) / (self.BUFSIZE) + 0.5) + 1
             self.send_message(str(length))
-
         try:
             print file_name.split('/')[-1].decode('cp949').encode('utf-8'),; print '을 전송합니다.'
         except:
             print file_name.split('/')[-1],; print '을 전송합니다.'
 
-        while file :
+
+        buf = file.read(self.BUFSIZE)
+        while buf :
+            hasher.update(buf)
+            self.send_message(buf)
             buf = file.read(self.BUFSIZE)
-            while buf :
-                hasher.update(buf)
-                self.send_message(buf)
-                buf = file.read(self.BUFSIZE)
 
         self.send_message(str(file_size))
         self.send_message(str(hasher.hexdigest()))
@@ -180,7 +183,9 @@ class TcpSocket :
 
             with open(file_name, "rb") as file:
                 for i in range(0, file_size, self.BUFSIZE) :
-                    buf = file.read(self.BUFSIZE)
+                    size = min(file_size - i, self.BUFSIZE)
+                    if size < 0 : size = 0
+                    buf = file.read(size)
                     if buf : hasher.update(buf)
             return hasher.hexdigest()
         except Exception, e :
@@ -191,11 +196,11 @@ class TcpSocket :
 
         start = datetime.datetime.now()
 
-        if os.path.exists(file_name) is True :
+        if os.path.exists(file_name) :
 
             self.send_message("Exist") # 파일 존재 여부 확인 메시지 보내기
 
-            out_file = open(file_name, 'a')
+            out_file = open(file_name, 'ab')
 
             file_size = os.path.getsize(file_name)
             self.send_message(str(file_size)) # 서버로 내가 가지고있던 파일 크기를 보냄 ( 서버에서는 size 만큼 파일 포인터 점프 )
@@ -203,6 +208,9 @@ class TcpSocket :
             ## 존재하던 파일의 무결성 체크 ##
             my_hash_value = self.get_hash_value(file_name, file_size)
             recv_hash_value = self.receive_message()
+
+            print "my : ",; print my_hash_value
+            print "recv : ",; print recv_hash_value
 
             if str(my_hash_value) != str(recv_hash_value) :
                 print "존재하던 파일이 손상 되었습니다. 삭제한 후에 다시 시도해주세요!"
@@ -230,7 +238,7 @@ class TcpSocket :
             out_file.close()
 
         end = datetime.datetime.now()
-
+        time.sleep(2)
         original_file_size = self.receive_message()
         original_hash_value = self.receive_message()
 
@@ -260,8 +268,7 @@ class TcpSocket :
             if directory is None:
                 print "파일의 해시값이 다릅니다."
                 print "원본 파일 해시값 : " + str(original_hash_value) + " 받은 파일 해시값 : " + str(receive_hash_value)
-                print "원본 파일 크기 : " + str(original_file_size) + " bytes\t받은 파일 크기 : " + str(
-                    receive_file_size) + " bytes"
+                print "원본 파일 크기 : " + str(original_file_size) + " bytes\t받은 파일 크기 : " + str(receive_file_size) + " bytes"
                 while (True):
                     print "파일을 지우시겠습니까?(Y/N) : ",
                     user_input = raw_input()
