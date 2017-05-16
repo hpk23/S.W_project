@@ -78,7 +78,6 @@ class TcpSocket :
         reply = self.receive_message() # 파일 존재 여부에 대한 메시지 받기 ( None : 없음, Exist : 존재 )
         file = open(file_name, "rb")
 
-        print "reply",; print reply
         if reply == "Exist" :
 
             jump_size = self.receive_message() # 클라이언트에 존재하던 파일의 크기를 받음
@@ -86,16 +85,18 @@ class TcpSocket :
             my_hash_value = self.get_hash_value(file_name, jump_size)
             self.send_message(str(my_hash_value)) # 무결성 체크를 위해 클라이언트에게 해쉬값 전송
             buf = file.read(jump_size) # jump_size 만큼 파일 포인터 점프
-            hasher.upadte(buf)
+            hasher.update(buf)
 
             file_size = os.path.getsize(file_name)
-            length = int(((file_size - jump_size)) / (self.BUFSIZE) + 0.5) + 1
+            float_number = round(( float(file_size) - jump_size) / float(self.BUFSIZE) + 0.49999999, 0)
+            length = int(float_number)
             self.send_message(str(length))
 
         else :
 
             file_size = os.path.getsize(file_name)
-            length = int((file_size) / (self.BUFSIZE) + 0.5) + 1
+            float_number = round( float(file_size) / float(self.BUFSIZE) + 0.49999999, 0)
+            length = int(float_number)
             self.send_message(str(length))
         try:
             print file_name.split('/')[-1].decode('cp949').encode('utf-8'),; print '을 전송합니다.'
@@ -209,16 +210,15 @@ class TcpSocket :
             my_hash_value = self.get_hash_value(file_name, file_size)
             recv_hash_value = self.receive_message()
 
-            print "my : ",; print my_hash_value
-            print "recv : ",; print recv_hash_value
-
             if str(my_hash_value) != str(recv_hash_value) :
                 print "존재하던 파일이 손상 되었습니다. 삭제한 후에 다시 시도해주세요!"
                 sys.exit(0)
 
-
-            length = int(self.receive_message())
+            print "파일 이어받기를 시작합니다."
+            length = self.receive_message()
+            length = int(length)
             for i in range(length) :
+                print "i : ",; print i
                 data = self.receive_message()
                 while not data :
                     data = self.receive_message()
