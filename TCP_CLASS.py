@@ -155,6 +155,7 @@ class TcpSocket :
 
 
             check, file_info = self.receive_file(file_name, True)
+
             if check == False:
                 strange_files.append(file_info)
 
@@ -212,13 +213,12 @@ class TcpSocket :
 
             if str(my_hash_value) != str(recv_hash_value) :
                 print "존재하던 파일이 손상 되었습니다. 삭제한 후에 다시 시도해주세요!"
-                sys.exit(0)
+                return
 
             print "파일 이어받기를 시작합니다."
             length = self.receive_message()
             length = int(length)
             for i in range(length) :
-                print "i : ",; print i
                 data = self.receive_message()
                 while not data :
                     data = self.receive_message()

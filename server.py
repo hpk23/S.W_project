@@ -59,6 +59,8 @@ if __name__ == "__main__" :
                 continue
 
             else :
+                print 'UDP Protocol\n'
+                connection.send_message(addr, file_name)
                 connection.send_file(addr, file_name)
                 del connection
 

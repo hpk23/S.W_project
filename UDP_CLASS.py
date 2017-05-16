@@ -118,19 +118,70 @@ class UdpSocket:
                     pass
                 self.send_file(addr, send_file_name)
 
+    def get_hash_value(self, file_name, file_size = None) :
 
+        if file_size is None :
+            file_size = os.path.getsize(file_name)
 
-    def receive_file(self, file_name, directory=None) :
+        try :
+            hasher = hashlib.sha224()
+
+            with open(file_name, "rb") as file:
+                for i in range(0, file_size, self.BUFSIZE) :
+                    size = min(file_size - i, self.BUFSIZE)
+                    if size < 0 : size = 0
+                    buf = file.read(size)
+                    if buf : hasher.update(buf)
+            return hasher.hexdigest()
+        except Exception, e :
+            print e
+            sys.exit(-1)
+
+    def receive_file(self, addr, file_name, directory=None) :
 
         start = datetime.datetime.now()
-        with open(file_name, "wb") as out_file :
+
+        if os.path.exists(file_name) :
+
+            self.send_message(addr, "Exist") # 파일 존재 여부 확인 메시지 보내기
+
+            out_file = open(file_name, 'ab')
+
+            file_size = os.path.getsize(file_name)
+            self.send_message(addr, str(file_size))
+
+            ## 존재하던 파일의 무결성 체크 ##
+            my_hash_value = self.get_hash_value(file_name, file_size)
+            recv_hash_value, addr = self.receive_message()
+
+            if str(my_hash_value) != str(recv_hash_value) :
+                print "존재하던 파일이 손상 되었습니다. 삭제한 후에 다시 시도해주세요!"
+                return
+
+            print "파일 이어받기를 시작합니다."
+            length, addr = self.receive_message()
+            length = int(length)
+            print "length : ",; print length
+            for i in range(length):
+                data, addr = self.receive_message()
+                while not data:
+                    data, addr = self.receive_message()
+                out_file.write(data)
+            out_file.close()
+
+        else :
+            self.send_message(addr, "None")
+            out_file = open(file_name, "wb")
             length, addr = self.receive_message()
             length = int(length)
 
             for i in range(length) :
                 data, addr = self.receive_message()
+                while not data :
+                    data, addr = self.receive_message()
                 out_file.write(data)
-        out_file.close()
+            out_file.close()
+
         end = datetime.datetime.now()
 
 
@@ -174,7 +225,6 @@ class UdpSocket:
                     user_input = raw_input()
                     if user_input.upper() != 'Y' and user_input.upper() != 'N':
                         print "잘못 입력 하셨습니다.\n"
-
                         continue
 
                     elif user_input.upper() == 'Y':
@@ -187,23 +237,40 @@ class UdpSocket:
     def send_file(self, addr, file_name) :
 
         hasher = hashlib.sha224()
-        file_size = os.path.getsize(file_name)
 
+        reply, addr = self.receive_message()
+        file = open(file_name, "rb")
 
-        total = int((file_size) / self.BUFSIZE + 0.5) + 1
-        self.send_message(addr, str(total))
+        if reply == "Exist" :
+
+            jump_size, addr = self.receive_message()
+            jump_size = int(jump_size)
+            my_hash_value = self.get_hash_value(file_name, jump_size)
+            self.send_message(addr, str(my_hash_value))
+            buf = file.read(jump_size)
+            hasher.update(buf)
+
+            file_size = os.path.getsize(file_name)
+            float_number = round((float(file_size) - jump_size) / float(self.BUFSIZE) + 0.49999999, 0)
+            length = int(float_number)
+            self.send_message(addr, str(length))
+
+        else :
+            file_size = os.path.getsize(file_name)
+            float_number = round(float(file_size) / float(self.BUFSIZE) + 0.49999999, 0)
+            length = int(float_number)
+            self.send_message(addr, str(length))
 
         try :
             print file_name.split('/')[-1].decode('cp949').encode('utf-8'),; print '을 전송합니다.'
         except :
             print file_name.split('/')[-1],; print '을 전송합니다.'
 
-        with open(file_name, "rb") as f:
-            buf = f.read(self.BUFSIZE)
-            while buf :
-                hasher.update(buf)
-                self.send_message(addr, buf)
-                buf = f.read(self.BUFSIZE)
+        buf = file.read(self.BUFSIZE)
+        while buf:
+            hasher.update(buf)
+            self.send_message(addr, buf)
+            buf = file.read(self.BUFSIZE)
 
         self.send_message(addr, str(file_size)) # file size 전송
         self.send_message(addr, str(hasher.hexdigest())) # file hash value 전송

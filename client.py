@@ -52,4 +52,5 @@ if __name__ == "__main__" :
         connection.receive_directory()
     else :
         file_name, addr = connection.receive_message()
-        connection.receive_file(file_name)
+        file_name = file_name.split('/')[-1]
+        connection.receive_file(addr, file_name)
