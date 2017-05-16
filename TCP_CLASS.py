@@ -5,6 +5,7 @@ import sys
 import os
 import datetime
 from socket import *
+import socket as sk
 from pymongo import MongoClient
 
 
@@ -19,11 +20,12 @@ class TcpSocket :
         connection = MongoClient(MONGO_ADDR)
         self.db = connection.music_db
         self.collection = self.db.music_list
+        self.protocol = "TCP"
+
 
         try :
             # SOCK_STREAM 연결지향(TCP/IP), SOCK_DGRAM 비연결지향(UDP)
             self.sock = socket(AF_INET, SOCK_STREAM)
-            #self.sock.setsockopt(SOL_SOCKET, SO_SNDBUF, self.BUFSIZE)
             self.sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
 
         except Exception as e :
@@ -72,6 +74,8 @@ class TcpSocket :
             data = self.sock.recv(self.BUFSIZE)
 
     def send_file(self, file_name) :
+
+        print 'start send_file'
 
         hasher = hashlib.sha224()
 

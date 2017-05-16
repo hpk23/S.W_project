@@ -27,15 +27,11 @@ class ServerThread(threading.Thread) : # threading.Thread 클래스를 상속 �
 
     def __del__(self) :
         self.stop()
+        del self.connection
         #self.join()
 
     def run(self) :
 
         self.connection.sock.settimeout(10)
 
-        directory_path = "D:/2017_S.W/1st"
-        if self.number is 0:
-            self.connection.send_directory(directory_path)
-
-        else:
-            self.connection.send_file(self.file_name)
+        self.connection.send_file(self.file_name)

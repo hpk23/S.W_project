@@ -1,6 +1,7 @@
 # coding: utf-8
 from socket import *
 from pymongo import MongoClient
+import socket as sk
 import os
 import sys
 import hashlib
@@ -18,6 +19,8 @@ class UdpSocket:
         connection = MongoClient(MONGO_ADDR)
         self.db = connection.music_db
         self.collection = self.db.music_list
+        self.protocol = "UDP"
+
 
         try:
             self.sock = socket(AF_INET, SOCK_DGRAM)
