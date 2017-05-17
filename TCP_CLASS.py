@@ -21,7 +21,10 @@ class TcpSocket :
         self.db = connection.music_db
         self.collection = self.db.music_list
         self.protocol = "TCP"
+        self.SERVER = SERVER
+        self.LISTENNUMBER = LISTEN_NUMBER
 
+    def setSocket(self) :
 
         try :
             # SOCK_STREAM 연결지향(TCP/IP), SOCK_DGRAM 비연결지향(UDP)
@@ -32,14 +35,14 @@ class TcpSocket :
             print '소켓 생성 실패 : ',; print e
             sys.exit(1)
 
-        if SERVER is True :
+        if self.SERVER is True :
             try :
                 self.sock.bind(self.ADDR)
             except Exception as e :
                 print 'bind 실패 : ',; print e
 
             try :
-                self.sock.listen(LISTEN_NUMBER)
+                self.sock.listen(self.LISTENNUMBER)
             except Exception as e :
                 print 'LISTEN 실패 : ',; print e
                 sys.exit(1)
@@ -51,8 +54,7 @@ class TcpSocket :
         self.client_ADDR = client_address
 
     def __del__(self) :
-        self.sock.close()
-
+        pass
     def receive_message(self):
         while True :
             data = self.sock.recv(self.BUFSIZE)
@@ -239,10 +241,11 @@ class TcpSocket :
                 while not data :
                     data = self.receive_message()
                 out_file.write(data)
+                #break
             out_file.close()
 
         end = datetime.datetime.now()
-        time.sleep(2)
+        time.sleep(1)
         original_file_size = self.receive_message()
         original_hash_value = self.receive_message()
 

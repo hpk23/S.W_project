@@ -10,37 +10,47 @@ import sys
 if __name__ == "__main__" :
 
     HOST = ''
-    PORT = 7050
-    ADDR = (HOST, PORT)
+    UDP_PORT = 7080
+    TCP_PORT = 7085
+    UDP_ADDR = (HOST, UDP_PORT)
+    TCP_ADDR = (HOST, TCP_PORT)
     BUFSIZE = 1024
 
     SERVER_HOST = '210.117.182.122'
-    SERVER_PORT = 6050
-    SERVER_ADDR = (SERVER_HOST, SERVER_PORT)
+    UDP_SERVER_PORT = 6050
+    TCP_SERVER_PORT = 6055
+    UDP_SERVER_ADDR = (SERVER_HOST, UDP_SERVER_PORT)
+    TCP_SERVER_ADDR = (SERVER_HOST, TCP_SERVER_PORT)
 
-    connection = UdpSocket(PORT, BUFSIZE=BUFSIZE)
-    connection.send_message(SERVER_ADDR, "hello")
+    udp_connection = UdpSocket(UDP_PORT, BUFSIZE=BUFSIZE)
+    udp_connection.setSocket()
 
-    music_list, addr = connection.receive_message()
+    tcp_connection = TcpSocket(TCP_PORT, BUFSIZE=BUFSIZE)
+    tcp_connection.setSocket()
+    tcp_connection.sock.connect(TCP_SERVER_ADDR)
+
+    udp_connection.send_message(UDP_SERVER_ADDR, "hello")
+
+    music_list, addr = udp_connection.receive_message()
     print music_list
 
     print "전송받을 파일의 번호를 입력해주세요( 디렉토리로 전송받기 : 0) : ",
 
     number = input()
 
-    connection.send_message(addr, str(number))  # 선택한 번호를 서버에 전송
+    udp_connection.send_message(addr, str(number))  # 선택한 번호를 서버에 전송
 
 
 
     if number is 0 :
-        length, addr = connection.receive_message()
+        length, addr = udp_connection.receive_message()
         length = int(length)
         strange_files = []
 
         for i in range(length) :
-            file_name, addr = connection.receive_message()
+            file_name, addr = udp_connection.receive_message()
             print "file_name : ",; print file_name
-            file_size, addr = connection.receive_message()
+            file_size, addr = udp_connection.receive_message()
             file_size = int(file_size)
             directory_name = '/'.join(file_name.split('/')[:-1])
 
@@ -48,25 +58,16 @@ if __name__ == "__main__" :
                 os.mkdir(directory_name)
 
             if file_size > 1024 * 64 :
-                if connection.protocol != "TCP" :
-                    connection.sock.shutdown(1)
-                    del connection
-                    connection = TcpSocket(PORT, BUFSIZE=BUFSIZE)
-                    connection.sock.connect(SERVER_ADDR)
 
-                check, file_info = connection.receive_file(file_name, True)
+                check, file_info = tcp_connection.receive_file(file_name, True)
 
                 if check == False :
                     strange_files.append(file_info)
 
             else :
-                check, file_info = connection.receive_file(addr, file_name, True)
+                check, file_info = udp_connection.receive_file(addr, file_name, True)
                 if check == False :
                     strange_files.append(file_info)
-
-            if connection.protocol != "UDP" :
-                del connection
-                connection = UdpSocket(PORT, BUFSIZE=BUFSIZE)
 
         for file_name, original_hash_value, receive_hash_value, original_file_size, receive_file_size in strange_files:
             print file_name, ;
@@ -85,23 +86,19 @@ if __name__ == "__main__" :
                 break
 
     else :
-        file_size, addr = connection.receive_message()  # 내가 받고자 하는 파일의 크기
+        file_size, addr = udp_connection.receive_message()  # 내가 받고자 하는 파일의 크기
 
         if int(file_size) > 1024*64 :
 
-            del connection
-            connection = TcpSocket(PORT, BUFSIZE=BUFSIZE)
-            connection.sock.connect(SERVER_ADDR)
-
-            file_name = connection.receive_message()
+            file_name = tcp_connection.receive_message()
             file_name = file_name.split('/')[-1]
 
-            connection.receive_file(file_name)
+            tcp_connection.receive_file(file_name)
             sys.exit(0)
 
         else :
-            connection.sock.settimeout(3)
+            #connection.sock.settimeout(3)
 
-            file_name, addr = connection.receive_message()
+            file_name, addr = udp_connection.receive_message()
             file_name = file_name.split('/')[-1]
-            connection.receive_file(addr, file_name)
+            udp_connection.receive_file(addr, file_name)

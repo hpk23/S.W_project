@@ -21,10 +21,13 @@ class UdpSocket:
         self.collection = self.db.music_list
         self.protocol = "UDP"
 
-
-        try:
+    def setSocket(self) :
+        try :
+            self.sock.close()
+        except Exception, e :
+            pass
+        try :
             self.sock = socket(AF_INET, SOCK_DGRAM)
-            #self.sock.setsockopt(SOL_SOCKET, SO_SNDBUF, self.BUFSIZE)
             self.sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
 
         except Exception as e:
@@ -39,7 +42,6 @@ class UdpSocket:
 
     def __del__(self) :
         self.sock.close()
-
 
     def receive_message(self) :
         while True :
@@ -145,8 +147,8 @@ class UdpSocket:
         start = datetime.datetime.now()
 
         if os.path.exists(file_name) :
-
             self.send_message(addr, "Exist") # 파일 존재 여부 확인 메시지 보내기
+
 
             out_file = open(file_name, 'ab')
 
@@ -173,9 +175,12 @@ class UdpSocket:
             out_file.close()
 
         else :
+            print 'None~'
             self.send_message(addr, "None")
+            print 'send  None end'
             out_file = open(file_name, "wb")
             length, addr = self.receive_message()
+            print 'receive length'
             length = int(length)
 
             for i in range(length) :
